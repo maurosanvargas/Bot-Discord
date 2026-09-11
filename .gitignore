@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Entornos virtuales
+.venv/
+venv/
+env/
+
+# Archivos de configuración locales y secretos
+config.py
+voz.json
+.env
+.env.*
+
+# Archivos temporales del bot
+/temp/
+temp/
+*.tmp
+
+# IDE / sistema
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Output de pruebas / artefactos
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Si quieres ignorar también sonidos generados localmente, descomenta esto:
+# sonidos/

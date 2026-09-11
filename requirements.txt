@@ -1,0 +1,55 @@
+# Loquendo Discord Bot
+# ====================
+#
+# Instalacion:
+#   python -m pip install -r requirements.txt
+#
+# El bot necesita Python 3.11 o superior.
+# Estas son dependencias de Python; los programas externos aparecen
+# documentados al final del archivo.
+
+# Discord y reproduccion de voz.
+discord.py==2.7.1
+PyNaCl==1.6.0
+
+# Peticiones HTTP para la API de Fish Audio.
+requests>=2.31.0
+
+# Requisitos externos
+# -------------------
+# - Python 3.11+
+# - FFmpeg disponible en PATH.
+#   Comprobar con: ffmpeg -version
+# - Loquendo TTS 7, incluido solo para el flujo antiguo de Loquendo.
+# - Un bot de Discord con el intent Message Content activado.
+#
+# Configuracion
+# -------------
+# - Revisar config.py antes de iniciar el bot.
+# - TOKEN debe contener el token del bot de Discord.
+# - FISH_AUDIO_API_KEY debe contener una clave valida de Fish Audio.
+# - FISH_AUDIO_SEGMENT_DELAY_MS controla la pausa entre segmentos Fish
+#   Audio; el valor recomendado inicial es 250.
+# - MODELOS_IA contiene los nombres usados como marcadores, por ejemplo:
+#     !dross Hola. !freezer Que tal?
+# - Los sonidos permanentes se colocan en sonidos/ y se usan asi:
+#     (pistol)
+#   para el archivo sonidos/pistol.mp3.
+#
+# Uso rapido
+# ----------
+# 1. Instalar dependencias:
+#      python -m pip install -r requirements.txt
+# 2. Iniciar el bot con Iniciar Bot.bat o:
+#      python bot.py
+# 3. En Discord, entrar al canal de voz:
+#      !join
+# 4. Probar una voz Fish Audio:
+#      !dross Hola, soy Dross.
+# 5. Combinar hasta tres voces y sonidos en un mensaje:
+#      !dross Hola. (pistol) !freezer Que tal? !rubius Jajaja.
+#
+# Seguridad
+# --------
+# No compartir ni subir a Git las claves de config.py.
+# Si una clave queda expuesta, revocarla y generar una nueva.
