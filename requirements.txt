@@ -11,6 +11,7 @@
 # Discord y reproduccion de voz.
 discord.py==2.7.1
 PyNaCl==1.6.0
+davey
 
 # Peticiones HTTP para la API de Fish Audio.
 requests>=2.31.0

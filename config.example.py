@@ -1,12 +1,17 @@
-TOKEN = "TU_TOKEN_DE_DISCORD_AQUI"
+import os
 
-TEMP_PATH = r"C:\ruta\a\tu\proyecto\temp"
+TOKEN = os.getenv("DISCORD_TOKEN", "")
+
+TEMP_PATH = os.getenv(
+    "TEMP_PATH",
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "temp")
+)
 
 AUTO_LEAVE_TIME = 15
 
 FISH_AUDIO_SEGMENT_DELAY_MS = 400
 
-FISH_AUDIO_API_KEY = "TU_API_KEY_DE_FISH_AUDIO"
+FISH_AUDIO_API_KEY = os.getenv("FISH_AUDIO_API_KEY", "")
 
 MODELOS_IA = {
     "freezer": "e921c8e95a3b4c4d8310db3ea11b3c84",
@@ -20,5 +25,8 @@ MODELOS_IA = {
     "rubius": "937996ea4d3b4edaa28d1e3418242e8b",
     "auron": "0740a1f4e529461fb39e07f5606f7296",
     "robot": "dbf9230866e84109a902f4e5eb1796ae",
-    "caca": "ae3fd7b5fd1747599113892358eb0ce1"
+    "caca": "ae3fd7b5fd1747599113892358eb0ce1",
+    "gaspi": "4911ceb45fd34a4ca3c4ef5ffa2a9a52",
+    "walter": "52fc1dcd125d4ecabef0baf91807cb12",
+    "john": "ea69ae4274f141cdbcabe0e56f4011d3"
 }

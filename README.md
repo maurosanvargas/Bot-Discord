@@ -32,7 +32,7 @@ Bot de Discord para reproducir voces de Fish Audio, combinando texto, voces y so
    ```bash
    copy config.example.py config.py
    ```
-5. Rellena los valores reales en `config.py` (`TOKEN`, `FISH_AUDIO_API_KEY` y la ruta temporal local).
+5. Define las variables de entorno `DISCORD_TOKEN` y `FISH_AUDIO_API_KEY`. Opcionalmente, define `TEMP_PATH`.
 6. Inicia el bot:
    ```bash
    python bot.py
