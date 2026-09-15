@@ -1,17 +1,6 @@
 TOKEN = "TU_TOKEN_DE_DISCORD_AQUI"
 
-LOQUENDO_PATH = r"C:\Program Files (x86)\Loquendo\LTTS7\bin\TTSFileGenerator.exe"
-
 TEMP_PATH = r"C:\ruta\a\tu\proyecto\temp"
-VOICE_CONFIG_PATH = r"C:\ruta\a\tu\proyecto\voz.json"
-
-DEFAULT_VOICE = "Jorge"
-
-VOCES_DISPONIBLES = [
-    "Jorge",
-    "Carlos",
-    "Ludoviko"
-]
 
 AUTO_LEAVE_TIME = 15
 

@@ -1,10 +1,9 @@
 # Bot TTS
 
-Bot de Discord para reproducir voz con Loquendo y modelos de Fish Audio, combinando texto, voces y sonidos de forma dinámica.
+Bot de Discord para reproducir voces de Fish Audio, combinando texto, voces y sonidos de forma dinámica.
 
 ## Características
 
-- Generación de voz con Loquendo.
 - Soporte para voces de Fish Audio con marcadores tipo `!freezer` o `!dross`.
 - Mezcla de texto, sonidos MP3 y voces en una sola reproducción.
 - Cola por servidor para gestionar varias peticiones.
@@ -15,7 +14,6 @@ Bot de Discord para reproducir voz con Loquendo y modelos de Fish Audio, combina
 - Python 3.11+
 - FFmpeg disponible en PATH
 - Discord bot token activo
-- Loquendo TTS 7 (para la ruta del generador de voz)
 - Clave API de Fish Audio
 
 ## Instalación
@@ -34,7 +32,7 @@ Bot de Discord para reproducir voz con Loquendo y modelos de Fish Audio, combina
    ```bash
    copy config.example.py config.py
    ```
-5. Rellena los valores reales en `config.py` (`TOKEN`, `FISH_AUDIO_API_KEY`, rutas locales, etc.).
+5. Rellena los valores reales en `config.py` (`TOKEN`, `FISH_AUDIO_API_KEY` y la ruta temporal local).
 6. Inicia el bot:
    ```bash
    python bot.py
@@ -45,15 +43,12 @@ Bot de Discord para reproducir voz con Loquendo y modelos de Fish Audio, combina
 - `!join` para entrar al canal de voz
 - `!dross Hola, soy Dross.`
 - `!freezer Que tal?`
-- `!decir Hola mundo`
-- `!voz` para consultar o cambiar la voz Loquendo
 
 ## Seguridad
 
 No subas credenciales reales a GitHub. El repositorio incluye un `.gitignore` para excluir archivos sensibles como:
 
 - `config.py`
-- `voz.json`
 - `temp/`
 - `__pycache__/`
 - variables de entorno
@@ -68,4 +63,4 @@ No subas credenciales reales a GitHub. El repositorio incluye un `.gitignore` pa
 
 ## Notas
 
-Este proyecto está pensado para ejecutarse en un entorno Windows, porque usa rutas locales de Loquendo y una ejecución específica con FFmpeg.
+Este proyecto utiliza FFmpeg para generar y reproducir audio. La configuración actual de desarrollo local utiliza rutas de Windows.

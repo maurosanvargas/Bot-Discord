@@ -1,7 +1,7 @@
 @echo off
-title Loquendo Discord Bot
+title Discord TTS Bot
 
-echo Iniciando Loquendo Bot...
+echo Iniciando Discord TTS Bot...
 cd /d "C:\Users\mauro\OneDrive\Escritorio\Loquendo Discord"
 
 python bot.py

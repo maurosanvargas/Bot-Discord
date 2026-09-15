@@ -1,4 +1,4 @@
-# Loquendo Discord Bot
+# Discord TTS Bot
 # ====================
 #
 # Instalacion:
@@ -20,7 +20,6 @@ requests>=2.31.0
 # - Python 3.11+
 # - FFmpeg disponible en PATH.
 #   Comprobar con: ffmpeg -version
-# - Loquendo TTS 7, incluido solo para el flujo antiguo de Loquendo.
 # - Un bot de Discord con el intent Message Content activado.
 #
 # Configuracion

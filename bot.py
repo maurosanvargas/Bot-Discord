@@ -1,5 +1,4 @@
 import asyncio
-import json
 import os
 import re
 import shutil
@@ -30,8 +29,6 @@ bot = commands.Bot(
 # ============================================================
 # ESTADO DEL BOT
 # ============================================================
-
-voz_actual = None
 
 # Una cola independiente por servidor.
 colas_audio = {}
@@ -213,58 +210,6 @@ def separar_segmentos_fish(texto, modelo_inicial):
     return segmentos
 
 # ============================================================
-# CONFIGURACIÓN DE VOZ LOQUENDO
-# ============================================================
-
-def cargar_voz():
-    """Carga la voz Loquendo guardada anteriormente."""
-
-    if not os.path.exists(config.VOICE_CONFIG_PATH):
-        return config.DEFAULT_VOICE
-
-    try:
-        with open(
-            config.VOICE_CONFIG_PATH,
-            "r",
-            encoding="utf-8"
-        ) as f:
-            datos = json.load(f)
-
-        voz = datos.get("voz")
-
-        if voz in config.VOCES_DISPONIBLES:
-            return voz
-
-    except Exception as e:
-        print(f"⚠️ Error cargando voz: {e}")
-
-    return config.DEFAULT_VOICE
-
-
-def guardar_voz(voz):
-    """Guarda la voz Loquendo seleccionada."""
-
-    try:
-        with open(
-            config.VOICE_CONFIG_PATH,
-            "w",
-            encoding="utf-8"
-        ) as f:
-            json.dump(
-                {"voz": voz},
-                f,
-                indent=4,
-                ensure_ascii=False
-            )
-
-    except Exception as e:
-        print(f"⚠️ Error guardando voz: {e}")
-
-
-voz_actual = cargar_voz()
-
-
-# ============================================================
 # CARPETA TEMPORAL
 # ============================================================
 
@@ -365,104 +310,6 @@ def eliminar_archivo(ruta):
 # ============================================================
 
 # ============================================================
-# LOQUENDO
-# ============================================================
-
-def generar_audio_loquendo(texto, voz):
-    """
-    Genera un WAV mediante Loquendo.
-
-    Esta función es síncrona porque TTSFileGenerator.exe
-    funciona mediante subprocess.
-
-    Se ejecutará mediante asyncio.to_thread().
-    """
-
-    asegurar_temp()
-
-    identificador = uuid.uuid4().hex[:8]
-
-    archivo_texto = os.path.join(
-        config.TEMP_PATH,
-        f"mensaje_{identificador}.txt"
-    )
-
-    salida = os.path.join(
-        config.TEMP_PATH,
-        f"audio_{identificador}"
-    )
-
-    archivo_audio = f"{salida}001.wav"
-
-    texto_generado = texto
-
-    if not texto_generado.endswith(
-        (".", "!", "?")
-    ):
-        texto_generado += "."
-
-    try:
-        with open(
-            archivo_texto,
-            "w",
-            encoding="utf-8"
-        ) as f:
-            f.write(texto_generado)
-
-        comando = [
-            config.LOQUENDO_PATH,
-            "-v",
-            voz,
-            "-o",
-            salida,
-            archivo_texto
-        ]
-
-        resultado = subprocess.run(
-            comando,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.PIPE,
-            text=True,
-            check=False
-        )
-
-        if resultado.returncode != 0:
-            error = resultado.stderr.strip()
-
-            raise RuntimeError(
-                f"Loquendo terminó con código "
-                f"{resultado.returncode}"
-                + (
-                    f": {error}"
-                    if error
-                    else ""
-                )
-            )
-
-        if not os.path.exists(archivo_audio):
-            raise RuntimeError(
-                "Loquendo terminó pero no generó "
-                f"el archivo esperado: {archivo_audio}"
-            )
-
-        return archivo_audio, archivo_texto
-
-    except Exception:
-
-        for archivo in (
-            archivo_audio,
-            archivo_texto
-        ):
-            try:
-                if os.path.exists(archivo):
-                    os.remove(archivo)
-            except OSError:
-                pass
-
-        raise
-
-
-# ============================================================
 # FISH AUDIO
 # ============================================================
 
@@ -530,14 +377,6 @@ async def generar_segmento_tts(
     archivo_texto será None para Fish Audio.
     """
 
-    if motor == "loquendo":
-
-        return await asyncio.to_thread(
-            generar_audio_loquendo,
-            texto,
-            voz
-        )
-
     if motor == "ia":
 
         identificador = uuid.uuid4().hex[:8]
@@ -556,9 +395,7 @@ async def generar_segmento_tts(
 
         return archivo_audio, None
 
-    raise RuntimeError(
-        f"Motor desconocido: {motor}"
-    )
+    raise RuntimeError(f"Motor de audio no compatible: {motor}")
 
 
 # ============================================================
@@ -741,13 +578,13 @@ async def generar_audio_compuesto(
         archivos_temporales
     """
 
-    if motor == "ia":
-        segmentos = separar_segmentos_fish(
-            texto,
-            voz
-        )
-    else:
-        segmentos = separar_segmentos_audio(texto)
+    if motor != "ia":
+        raise RuntimeError(f"Motor de audio no compatible: {motor}")
+
+    segmentos = separar_segmentos_fish(
+        texto,
+        voz
+    )
 
     archivos_audio = []
     archivos_temporales = []
@@ -921,7 +758,6 @@ async def procesador_cola(
     Procesa exclusivamente la cola de un servidor.
 
     Cada elemento puede contener:
-        - Loquendo
         - Fish Audio
         - TTS + sonidos intercalados
 
@@ -1114,11 +950,6 @@ async def on_ready():
 
     print(
         f"✅ Conectado como {bot.user}"
-    )
-
-    print(
-        f"🎙️ Voz Loquendo actual: "
-        f"{voz_actual}"
     )
 
     print(
@@ -1368,99 +1199,6 @@ async def shutdown(ctx):
         )
 
     await bot.close()
-
-
-# ============================================================
-# !DECIR
-# ============================================================
-
-@bot.command()
-async def decir(ctx, *, texto):
-
-    if not ctx.voice_client:
-
-        await ctx.send(
-            "Primero usa !join."
-        )
-
-        return
-
-    if not texto.strip():
-
-        await ctx.send(
-            "Debes escribir algo para decir."
-        )
-
-        return
-
-    iniciar_worker(
-        ctx.guild.id
-    )
-
-    await agregar_a_cola(
-        ctx,
-        texto,
-        "loquendo",
-        voz_actual
-    )
-
-
-# ============================================================
-# !VOZ
-# ============================================================
-
-@bot.command()
-async def voz(
-    ctx,
-    *,
-    nueva_voz=None
-):
-
-    global voz_actual
-
-    # Consultar voz actual.
-    if nueva_voz is None:
-
-        await ctx.send(
-            f"🎙️ Voz actual: `{voz_actual}`"
-        )
-
-        return
-
-    # Capitalización compatible con:
-    # jorge -> Jorge
-    # CARLOS -> Carlos
-    nueva_voz = (
-        nueva_voz
-        .strip()
-        .capitalize()
-    )
-
-    if nueva_voz not in (
-        config.VOCES_DISPONIBLES
-    ):
-
-        voces = ", ".join(
-            config.VOCES_DISPONIBLES
-        )
-
-        await ctx.send(
-            f"❌ Voz no disponible.\n"
-            f"Voces disponibles: {voces}"
-        )
-
-        return
-
-    voz_actual = nueva_voz
-
-    guardar_voz(
-        voz_actual
-    )
-
-    await ctx.send(
-        f"✅ Voz cambiada a: "
-        f"`{voz_actual}`"
-    )
 
 
 # ============================================================

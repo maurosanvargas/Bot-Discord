@@ -12,7 +12,6 @@ env/
 
 # Archivos de configuración locales y secretos
 config.py
-voz.json
 .env
 .env.*
 
