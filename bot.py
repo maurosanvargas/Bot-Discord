@@ -22,7 +22,8 @@ intents.message_content = True
 
 bot = commands.Bot(
     command_prefix="!",
-    intents=intents
+    intents=intents,
+    case_insensitive=True
 )
 
 
@@ -989,6 +990,39 @@ async def ping(ctx):
 
     await ctx.send(
         "Soy el coco!"
+    )
+
+
+# ============================================================
+# !COMANDOS
+# ============================================================
+
+@bot.command()
+async def comandos(ctx):
+
+    voces = "\n".join(
+        f"!{nombre}"
+        for nombre in config.MODELOS_IA
+    )
+
+    sonidos = ", ".join(
+        f"({nombre})"
+        for nombre in obtener_sonidos_disponibles()
+    )
+
+    await ctx.send(
+        "**Comandos disponibles**\n"
+        "`!join` - Entrar a tu canal de voz\n"
+        "`!leave` - Salir del canal de voz\n"
+        "`!skip` - Saltar el audio actual\n"
+        "`!ping` - Comprobar que estoy activo\n"
+        "`!shutdown` - Apagar el bot (administradores)\n\n"
+        "**Voces Fish Audio**\n"
+        f"{voces}\n\n"
+        "Escribe el texto después del comando de voz. "
+        "Puedes intercalar sonidos usando paréntesis:\n"
+        f"`!dross Texto de prueba (dross1)`\n\n"
+        f"**Sonidos:** {sonidos}"
     )
 
 # ============================================================
