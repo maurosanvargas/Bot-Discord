@@ -823,6 +823,11 @@ async def procesador_cola(
             # REPRODUCIR
             # ------------------------------------------------
 
+            # Si el canal está ocupado reproduciendo algún otro audio (como el screamer),
+            # esperar limpiamente a que termine antes de reproducir para evitar 'Already playing audio'.
+            while voice_client.is_playing():
+                await asyncio.sleep(0.25)
+
             fuente = discord.FFmpegPCMAudio(
                 archivo_audio
             )
@@ -1082,7 +1087,7 @@ async def screamer(ctx):
                     voice_client = await canal.connect(self_deaf=True)
                     iniciar_worker(ctx.guild.id)
 
-                if not voice_client.is_playing():
+                if not voice_client.is_playing() and ctx.guild.id not in reproduciendo:
                     fuente_original = discord.FFmpegPCMAudio(
                         ruta_sonido,
                         options='-af "volume=0.3"'
