@@ -1,19 +1,4 @@
-import os
-
-TOKEN = os.getenv("DISCORD_TOKEN", "")
-
-TEMP_PATH = os.getenv(
-    "TEMP_PATH",
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "temp")
-)
-
-AUTO_LEAVE_TIME = 15
-
-FISH_AUDIO_SEGMENT_DELAY_MS = 400
-
-FISH_AUDIO_API_KEY = os.getenv("FISH_AUDIO_API_KEY", "")
-
-MODELOS_IA = {
+{
     "freezer": "e921c8e95a3b4c4d8310db3ea11b3c84",
     "gohan": "fef12f2bb6d54d7bb3438273c33a0a62",
     "babidick": "525a0abb973945528a595215d8a2893c",
@@ -37,4 +22,3 @@ MODELOS_IA = {
     "luisito": "49dad747847a46eda3effdf7fdb19367",
     "jordi": "55b94e52816f41e59a763895171a437d"
 }
-

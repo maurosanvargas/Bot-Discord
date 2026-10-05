@@ -1,10 +1,11 @@
 import asyncio
+import json
 import os
+import random
 import re
 import shutil
 import subprocess
 import uuid
-import random
 
 import discord
 from discord.ext import commands
@@ -91,50 +92,37 @@ def obtener_sonidos_disponibles():
     return sonidos
 
 
-def separar_segmentos_audio(texto):
-    """Separa texto TTS y marcadores de sonidos conocidos."""
+# ============================================================
+# CONFIGURACIÓN DE VOCES IA
+# ============================================================
 
-    sonidos = obtener_sonidos_disponibles()
-    segmentos = []
-    posicion = 0
-    for coincidencia in re.finditer(
-        r"\(([^()\r\n]+)\)",
-        texto
-    ):
-        nombre = coincidencia.group(1).strip().lower()
-        archivo = sonidos.get(nombre)
+VOCES_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "voces.json"
+)
 
-        if archivo is None:
-            continue
 
-        texto_anterior = texto[
-            posicion:coincidencia.start()
-        ].strip()
+def cargar_voces():
+    """
+    Carga el diccionario de voces desde voces.json.
+    Si el archivo existe, sincroniza config.MODELOS_IA con su contenido.
+    """
+    if os.path.isfile(VOCES_PATH):
+        try:
+            with open(VOCES_PATH, "r", encoding="utf-8") as f:
+                voces = json.load(f)
+                config.MODELOS_IA.clear()
+                config.MODELOS_IA.update(voces)
+                return config.MODELOS_IA
+        except Exception as e:
+            print(f"⚠️ Error leyendo {VOCES_PATH}: {e}")
+    return config.MODELOS_IA
 
-        if texto_anterior:
-            segmentos.append(
-                ("tts", texto_anterior)
-            )
 
-        segmentos.append(
-            ("sound", archivo)
-        )
-
-        posicion = coincidencia.end()
-
-    texto_restante = texto[posicion:].strip()
-
-    if texto_restante:
-        segmentos.append(
-            ("tts", texto_restante)
-        )
-
-    if not segmentos:
-        segmentos.append(
-            ("tts", texto)
-        )
-
-    return segmentos
+def guardar_voces(voces):
+    """Guarda el diccionario de voces en voces.json."""
+    with open(VOCES_PATH, "w", encoding="utf-8") as f:
+        json.dump(voces, f, indent=4, ensure_ascii=False)
 
 
 def separar_segmentos_fish(texto, modelo_inicial):
@@ -148,7 +136,7 @@ def separar_segmentos_fish(texto, modelo_inicial):
 
     patron_voces = "|".join(
         re.escape(nombre)
-        for nombre in config.MODELOS_IA
+        for nombre in sorted(config.MODELOS_IA, key=len, reverse=True)
     )
 
     for coincidencia in re.finditer(
@@ -1000,30 +988,58 @@ async def ping(ctx):
 @bot.command()
 async def comandos(ctx):
 
-    voces = "\n".join(
-        f"!{nombre}"
-        for nombre in config.MODELOS_IA
+    voces = ", ".join(
+        f"`!{nombre}`"
+        for nombre in sorted(config.MODELOS_IA.keys())
     )
 
     sonidos = ", ".join(
-        f"({nombre})"
-        for nombre in obtener_sonidos_disponibles()
+        f"`({nombre})`"
+        for nombre in sorted(obtener_sonidos_disponibles().keys())
     )
 
-    await ctx.send(
+    mensaje_ayuda = (
         "**Comandos disponibles**\n"
         "`!join` - Entrar a tu canal de voz\n"
         "`!leave` - Salir del canal de voz\n"
         "`!skip` - Saltar el audio actual\n"
         "`!ping` - Comprobar que estoy activo\n"
-        "`!shutdown` - Apagar el bot (administradores)\n\n"
-        "**Voces Fish Audio**\n"
+        "`!screamer` - Sorpresa en el canal\n"
+        "`!agregarvoz <nombre> <id>` - Agregar nueva voz de Fish Audio (Admin/Owner)\n"
+        "`!eliminarvoz <nombre>` - Eliminar voz existente (Admin/Owner)\n"
+        "`!shutdown` - Apagar el bot (Admin/Owner)\n\n"
+        f"**Voces disponibles ({len(config.MODELOS_IA)}):**\n"
         f"{voces}\n\n"
-        "Escribe el texto después del comando de voz. "
-        "Puedes intercalar sonidos usando paréntesis:\n"
-        f"`!dross Texto de prueba (dross1)`\n\n"
-        f"**Sonidos:** {sonidos}"
+        "Escribe el texto después del comando de voz. Puedes intercalar sonidos usando paréntesis:\n"
+        "`!dross Texto de prueba (dross1)`\n\n"
+        f"**Sonidos ({len(obtener_sonidos_disponibles())}):**\n"
+        f"{sonidos}"
     )
+
+    if len(mensaje_ayuda) <= 1900:
+        await ctx.send(mensaje_ayuda)
+    else:
+        parte1 = (
+            "**Comandos disponibles**\n"
+            "`!join` - Entrar a tu canal de voz\n"
+            "`!leave` - Salir del canal de voz\n"
+            "`!skip` - Saltar el audio actual\n"
+            "`!ping` - Comprobar que estoy activo\n"
+            "`!screamer` - Sorpresa en el canal\n"
+            "`!agregarvoz <nombre> <id>` - Agregar nueva voz de Fish Audio (Admin/Owner)\n"
+            "`!eliminarvoz <nombre>` - Eliminar voz existente (Admin/Owner)\n"
+            "`!shutdown` - Apagar el bot (Admin/Owner)\n\n"
+            f"**Voces disponibles ({len(config.MODELOS_IA)}):**\n"
+            f"{voces}"
+        )
+        parte2 = (
+            "Escribe el texto después del comando de voz. Puedes intercalar sonidos usando paréntesis:\n"
+            "`!dross Texto de prueba (dross1)`\n\n"
+            f"**Sonidos ({len(obtener_sonidos_disponibles())}):**\n"
+            f"{sonidos}"
+        )
+        await ctx.send(parte1)
+        await ctx.send(parte2)
 
 # ============================================================
 # !SCREAMER
@@ -1210,8 +1226,9 @@ async def skip(ctx):
 # ============================================================
 
 @bot.command()
-@commands.has_permissions(
-    administrator=True
+@commands.check_any(
+    commands.is_owner(),
+    commands.has_permissions(administrator=True)
 )
 async def shutdown(ctx):
 
@@ -1233,6 +1250,85 @@ async def shutdown(ctx):
         )
 
     await bot.close()
+
+
+# ============================================================
+# !AGREGARVOZ
+# ============================================================
+
+@bot.command(name="agregarvoz")
+@commands.check_any(
+    commands.is_owner(),
+    commands.has_permissions(administrator=True)
+)
+async def agregarvoz(ctx, nombre: str, reference_id: str):
+    """
+    Agrega o actualiza una voz Fish Audio en caliente.
+    Uso: !agregarvoz vegeta b4a9841808604921b79527ec3c393bc3
+    """
+    nombre = nombre.strip().lower()
+    reference_id = reference_id.strip()
+
+    if not re.match(r"^[a-z0-9_]+$", nombre):
+        await ctx.send("❌ El nombre de la voz solo puede contener letras, números y guión bajo.")
+        return
+
+    comandos_reservados = {
+        "join", "leave", "skip", "ping", "comandos",
+        "screamer", "shutdown", "agregarvoz", "eliminarvoz"
+    }
+    if nombre in comandos_reservados:
+        await ctx.send(f"❌ '{nombre}' es un comando reservado y no puede usarse como voz.")
+        return
+
+    # Si ya existía como comando, removerlo primero para refrescarlo
+    if nombre in bot.all_commands:
+        bot.remove_command(nombre)
+
+    config.MODELOS_IA[nombre] = reference_id
+    guardar_voces(config.MODELOS_IA)
+
+    bot.add_command(
+        crear_comando_ia(
+            nombre,
+            reference_id
+        )
+    )
+
+    await ctx.send(
+        f"✅ Voz `!{nombre}` registrada exitosamente.\n"
+        f"ID: `{reference_id}`\n"
+        f"Ya puedes probarla con: `!{nombre} tu texto aquí`."
+    )
+
+
+# ============================================================
+# !ELIMINARVOZ
+# ============================================================
+
+@bot.command(name="eliminarvoz")
+@commands.check_any(
+    commands.is_owner(),
+    commands.has_permissions(administrator=True)
+)
+async def eliminarvoz(ctx, nombre: str):
+    """
+    Elimina una voz Fish Audio.
+    Uso: !eliminarvoz vegeta
+    """
+    nombre = nombre.strip().lower()
+
+    if nombre not in config.MODELOS_IA:
+        await ctx.send(f"❌ La voz `!{nombre}` no existe.")
+        return
+
+    del config.MODELOS_IA[nombre]
+    guardar_voces(config.MODELOS_IA)
+
+    if nombre in bot.all_commands:
+        bot.remove_command(nombre)
+
+    await ctx.send(f"🗑️ Voz `!{nombre}` eliminada correctamente.")
 
 
 # ============================================================
@@ -1301,6 +1397,8 @@ def crear_comando_ia(
 # ============================================================
 # REGISTRAR TODAS LAS VOCES IA
 # ============================================================
+
+cargar_voces()
 
 for nombre, modelo in config.MODELOS_IA.items():
 
