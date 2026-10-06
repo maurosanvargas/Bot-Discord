@@ -33,9 +33,13 @@ class FishSegmentsTests(unittest.TestCase):
             ]
         )
 
-    def test_fish_rechaza_mas_de_tres_voces(self):
-        with self.assertRaisesRegex(ValueError, "3 voces"):
-            bot.separar_segmentos_fish(
-                "!dross Uno. !freezer Dos. !rubius Tres. !auron Cuatro.",
-                config.MODELOS_IA["dross"]
-            )
+    def test_fish_permite_mas_de_tres_voces(self):
+        segmentos = bot.separar_segmentos_fish(
+            "!dross Uno. !freezer Dos. !rubius Tres. !auron Cuatro.",
+            config.MODELOS_IA["dross"]
+        )
+        self.assertEqual(len(segmentos), 4)
+        self.assertEqual(segmentos[0], ("tts", "Uno.", "ia", config.MODELOS_IA["dross"]))
+        self.assertEqual(segmentos[1], ("tts", "Dos.", "ia", config.MODELOS_IA["freezer"]))
+        self.assertEqual(segmentos[2], ("tts", "Tres.", "ia", config.MODELOS_IA["rubius"]))
+        self.assertEqual(segmentos[3], ("tts", "Cuatro.", "ia", config.MODELOS_IA["auron"]))

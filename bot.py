@@ -126,13 +126,12 @@ def guardar_voces(voces):
 
 
 def separar_segmentos_fish(texto, modelo_inicial):
-    """Separa hasta tres voces Fish Audio y sonidos MP3."""
+    """Separa voces Fish Audio y sonidos MP3."""
 
     sonidos = obtener_sonidos_disponibles()
     segmentos = []
     posicion = 0
     modelo_actual = modelo_inicial
-    voces_utilizadas = {modelo_inicial}
 
     patron_voces = "|".join(
         re.escape(nombre)
@@ -150,15 +149,6 @@ def separar_segmentos_fish(texto, modelo_inicial):
         if es_voz:
             nombre_voz = marcador[1:].lower()
             nuevo_modelo = config.MODELOS_IA[nombre_voz]
-
-            if nuevo_modelo != modelo_actual:
-                voces_utilizadas.add(nuevo_modelo)
-
-            if len(voces_utilizadas) > 3:
-                raise ValueError(
-                    "Un mensaje puede utilizar como máximo "
-                    "3 voces Fish Audio."
-                )
         else:
             nombre_sonido = coincidencia.group(1).strip().lower()
             archivo = sonidos.get(nombre_sonido)
