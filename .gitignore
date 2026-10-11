@@ -33,3 +33,7 @@ htmlcov/
 
 # Si quieres ignorar también sonidos generados localmente, descomenta esto:
 # sonidos/
+
+# Subproyecto independiente
+minecraft-server/
+
