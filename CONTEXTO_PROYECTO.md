@@ -2,21 +2,18 @@
 
 ## Propósito
 
-Este proyecto es un bot personal de Discord escrito en Python. Su función principal es convertir texto en audio mediante Fish Audio, combinarlo con sonidos MP3 locales y reproducir el resultado en un canal de voz de Discord.
+Este proyecto es un bot personal de Discord escrito en Python. Su función principal es convertir texto en audio mediante Fish Audio, combinarlo con sonidos MP3 locales, reproducir el resultado en un canal de voz de Discord e interactuar conversacionalmente mediante IA (Google Gemini Flash) con personajes como ElXokas.
 
-El nombre histórico del proyecto es `Loquendo Discord`, pero Loquendo ya fue eliminado completamente del código. El motor TTS actual y único es Fish Audio.
+El nombre histórico del proyecto es `Loquendo Discord`, pero Loquendo ya fue eliminado completamente del código. El motor TTS actual y único es Fish Audio, y el motor de IA conversacional es Google Gemini.
 
 No es un SaaS, no tiene página web, no tiene API propia, no tiene cuentas de usuario y no utiliza base de datos.
 
 ## Estado actual
 
-- El bot funciona localmente en Windows.
-- También fue probado dentro de un contenedor Docker Linux.
-- La imagen Docker se construye correctamente.
+- El bot funciona localmente en Windows y en VM/Docker Linux.
 - Fish Audio, los sonidos, FFmpeg, las colas y la reproducción de Discord funcionan.
-- Loquendo, sus comandos, su configuración y sus pruebas fueron eliminados.
-- El despliegue previsto en una plataforma externa es un proceso persistente tipo Background Worker.
-- Render detecta Docker, pero su Background Worker no es gratuito en el plan mostrado durante la configuración.
+- Integración conversacional inteligente con Google Gemini Flash (`ia_chat.py`) con memoria por canal y personalidad sin censura.
+- El despliegue previsto en una plataforma externa (VM/Render/Docker) es un proceso persistente tipo Background Worker.
 
 ## Flujo principal
 
@@ -24,7 +21,14 @@ No es un SaaS, no tiene página web, no tiene API propia, no tiene cuentas de us
 Usuario de Discord
         |
         v
-Comando !dross, !freezer, etc.
+Comando de voz (!dross, etc.)  O  Comando IA (!xokas_ia <pregunta>)
+        |                                       |
+        |                                       v
+        |                              ia_chat.py (Gemini)
+        |                                       |
+        |                              Respuesta texto (+ chat Discord)
+        |                                       |
+        +---------------------------------------+
         |
         v
 Cola independiente del servidor/guild
@@ -43,22 +47,6 @@ FFmpeg mezcla y concatena los segmentos
 Discord Voice mediante FFmpegPCMAudio
 ```
 
-Un mensaje puede combinar texto, sonidos y hasta tres modelos de voz Fish Audio.
-
-Ejemplo:
-
-```text
-!dross Este es el texto (dross1). !freezer Segunda voz (pistol).
-```
-
-Conceptualmente se procesa como:
-
-1. Fish Audio con el modelo `dross` para el primer texto.
-2. `sonidos/dross1.mp3`.
-3. Fish Audio con el modelo `freezer` para el segundo texto.
-4. `sonidos/pistol.mp3`.
-5. FFmpeg concatena todo respetando el orden.
-
 ## Estructura relevante
 
 ```text
@@ -67,6 +55,7 @@ Loquendo Discord/
 ├── config.py                 # Configuración local, ignorada por Git
 ├── config.example.py         # Plantilla sin secretos
 ├── fish_audio.py             # Cliente HTTP de Fish Audio
+├── ia_chat.py                # Cliente Gemini Flash, memoria por canal y personalidades IA
 ├── Dockerfile
 ├── .dockerignore
 ├── Iniciar Bot.bat           # Arranque local en Windows
@@ -113,6 +102,11 @@ Comandos generales:
 - `!comandos`: muestra comandos, voces y sonidos disponibles.
 - `!screamer`: envía la imagen del screamer y puede reproducir su sonido.
 - `!shutdown`: apaga el bot; requiere permisos de administrador.
+
+Comandos IA (Google Gemini Flash + Fish Audio):
+
+- `!xokas_ia <pregunta>`: Genera respuesta en tiempo real encarnando al Xokas de 2022 con Gemini Flash (soberbia, insultos satíricos, reconocimiento de usuarios y memoria de chismes) y la reproduce por voz con su modelo clonado en Fish Audio.
+- `!xokas_reset`: Reinicia la memoria de conversación del Xokas para el canal actual.
 
 Comandos Fish:
 
@@ -184,6 +178,17 @@ Envía:
 
 La integración activa utiliza `requests`. El SDK de Fish aparece en `test_import.py`, pero la generación principal del bot utiliza la API HTTP.
 
+## IA Conversacional (`ia_chat.py`)
+
+El módulo `ia_chat.py` gestiona la interacción conversacional con Google Gemini:
+
+- **Modelo predeterminado:** `gemini-flash-lite-latest` (con reintento automático a `gemini-3.5-flash` y `gemini-3.1-flash-lite` ante picos de demanda).
+- **Memoria viva por canal:** Almacena un historial rodante de hasta 8 turnos por cada canal de Discord (`channel_id`), permitiendo hilos conversacionales continuos sin cruzar canales.
+- **Identificación de usuarios y cotilleos:** Cada mensaje recibido se formatea como `[NombreUsuario]: mensaje`. El prompt del Xokas instruye a la IA a memorizar críticas, burlas o chismes hacia otros integrantes de la llamada; cuando el usuario criticado habla, el bot le echa en cara los comentarios de los demás.
+- **Roleplay sin censura:** Configurado con `HarmBlockThreshold.BLOCK_NONE` en todas las categorías de moderación para posibilitar insultos satíricos, agresividad cómica y soberbia al estilo de sus directos de 2022 sin bloqueos artificiales de IA.
+- **Optimización para voz:** Respuestas acotadas a 2-4 frases directas, eliminando asteriscos teatrales, emojis y markdown incompatible con TTS.
+- **Auto-expiración:** Si un canal permanece inactivo por más de 20 minutos, la memoria se libera automáticamente.
+
 ## Configuración
 
 La plantilla `config.example.py` utiliza variables de entorno:
@@ -191,13 +196,17 @@ La plantilla `config.example.py` utiliza variables de entorno:
 ```python
 TOKEN = os.getenv("DISCORD_TOKEN", "")
 FISH_AUDIO_API_KEY = os.getenv("FISH_AUDIO_API_KEY", "")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest")
 ```
 
-En Render/Docker se deben configurar:
+En la VM / Docker / Render se deben configurar:
 
 ```text
 DISCORD_TOKEN
 FISH_AUDIO_API_KEY
+GEMINI_API_KEY
+GEMINI_MODEL (opcional, por defecto gemini-flash-lite-latest)
 ```
 
 `TEMP_PATH` es opcional. Si no se especifica, se crea una carpeta `temp` junto al código.
