@@ -38,3 +38,6 @@ MODELOS_IA = {
     "jordi": "55b94e52816f41e59a763895171a437d"
 }
 
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest")
+

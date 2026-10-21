@@ -12,6 +12,7 @@ from discord.ext import commands
 
 import config
 import fish_audio
+import ia_chat
 
 
 # ============================================================
@@ -999,6 +1000,8 @@ async def comandos(ctx):
         "`!leave` - Salir del canal de voz\n"
         "`!skip` - Saltar el audio actual\n"
         "`!ping` - Comprobar que estoy activo\n"
+        "`!xokas_ia <pregunta>` - Habla con ElXokas (IA Gemini + Voz Fish)\n"
+        "`!xokas_reset` - Olvida la conversación del Xokas en este canal\n"
         "`!screamer` - Sorpresa en el canal\n"
         "`!agregarvoz <nombre> <id>` - Agregar nueva voz de Fish Audio (Admin/Owner)\n"
         "`!eliminarvoz <nombre>` - Eliminar voz existente (Admin/Owner)\n"
@@ -1020,6 +1023,8 @@ async def comandos(ctx):
             "`!leave` - Salir del canal de voz\n"
             "`!skip` - Saltar el audio actual\n"
             "`!ping` - Comprobar que estoy activo\n"
+            "`!xokas_ia <pregunta>` - Habla con ElXokas (IA Gemini + Voz Fish)\n"
+            "`!xokas_reset` - Olvida la conversación del Xokas en este canal\n"
             "`!screamer` - Sorpresa en el canal\n"
             "`!agregarvoz <nombre> <id>` - Agregar nueva voz de Fish Audio (Admin/Owner)\n"
             "`!eliminarvoz <nombre>` - Eliminar voz existente (Admin/Owner)\n"
@@ -1035,6 +1040,70 @@ async def comandos(ctx):
         )
         await ctx.send(parte1)
         await ctx.send(parte2)
+
+
+# ============================================================
+# !XOKAS_IA (IA CONVERSACIONAL GEMINI + VOZ CLONADA FISH AUDIO)
+# ============================================================
+
+@bot.command(name="xokas_ia")
+async def xokas_ia(ctx, *, pregunta: str):
+    """
+    Habla directamente con ElXokas (2022).
+    Genera la respuesta con Google Gemini y la reproduce en el canal de voz.
+    """
+    if not ctx.voice_client:
+        await ctx.send("❌ Primero conéctame a un canal de voz usando `!join`.")
+        return
+
+    if not pregunta.strip():
+        await ctx.send("❌ Tienes que decirle algo al Xokas.")
+        return
+
+    modelo_xokas = config.MODELOS_IA.get("xokas")
+    if not modelo_xokas:
+        await ctx.send("❌ El modelo de voz de 'xokas' no está configurado en config.MODELOS_IA.")
+        return
+
+    iniciar_worker(ctx.guild.id)
+
+    async with ctx.typing():
+        try:
+            # Consultar IA en un hilo separado para no bloquear el bucle de eventos
+            respuesta_ia = await asyncio.to_thread(
+                ia_chat.consultar_xokas,
+                ctx.channel.id,
+                ctx.author.display_name,
+                pregunta
+            )
+        except Exception as e:
+            print(f"❌ Error consultando Gemini para xokas_ia: {e}")
+            await ctx.send(f"❌ ElXokas se ha quedado sin palabras por un error de IA: `{e}`")
+            return
+
+    # Mostrar la respuesta en texto en el canal
+    await ctx.send(f"💬 **ElXokas**: {respuesta_ia}")
+
+    # Encolar para reproducir con la voz clonada del Xokas
+    await agregar_a_cola(
+        ctx,
+        respuesta_ia,
+        "ia",
+        modelo_xokas
+    )
+
+
+@bot.command(name="xokas_reset")
+async def xokas_reset(ctx):
+    """
+    Borra la memoria del Xokas para el canal actual.
+    """
+    borrado = ia_chat.resetear_memoria(ctx.channel.id)
+    if borrado:
+        await ctx.send("🧠 Al Xokas se le ha olvidado todo lo que dijeron en este canal. Nueva conversación iniciada.")
+    else:
+        await ctx.send("🧠 El Xokas no tenía ninguna conversación guardada en este canal.")
+
 
 # ============================================================
 # !SCREAMER
@@ -1270,7 +1339,8 @@ async def agregarvoz(ctx, nombre: str, reference_id: str):
 
     comandos_reservados = {
         "join", "leave", "skip", "ping", "comandos",
-        "screamer", "shutdown", "agregarvoz", "eliminarvoz"
+        "screamer", "shutdown", "agregarvoz", "eliminarvoz",
+        "xokas_ia", "xokas_reset"
     }
     if nombre in comandos_reservados:
         await ctx.send(f"❌ '{nombre}' es un comando reservado y no puede usarse como voz.")
