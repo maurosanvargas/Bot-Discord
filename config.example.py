@@ -1,6 +1,20 @@
 import os
 
+# Cargar automáticamente variables de entorno desde .env si existe
+env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+if os.path.isfile(env_path):
+    try:
+        with open(env_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, v = line.split("=", 1)
+                    os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+    except Exception as e:
+        print(f"⚠️ Error leyendo .env: {e}")
+
 TOKEN = os.getenv("DISCORD_TOKEN", "")
+
 
 TEMP_PATH = os.getenv(
     "TEMP_PATH",

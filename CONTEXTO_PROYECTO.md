@@ -200,7 +200,7 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest")
 ```
 
-En la VM / Docker / Render se deben configurar:
+En la VM / Docker / Render se configuran mediante un archivo `.env` (basado en la plantilla `.env.example`) o variables del sistema:
 
 ```text
 DISCORD_TOKEN
@@ -209,9 +209,11 @@ GEMINI_API_KEY
 GEMINI_MODEL (opcional, por defecto gemini-flash-lite-latest)
 ```
 
+`config.example.py` detecta y carga automáticamente cualquier archivo `.env` que exista en la raíz del proyecto.
+
 `TEMP_PATH` es opcional. Si no se especifica, se crea una carpeta `temp` junto al código.
 
-Para uso local, `config.py` está ignorado por Git y puede contener la configuración local. Nunca incluir claves reales en este documento ni en `config.example.py`.
+Tanto `config.py` como `.env` están rigurosamente excluidos por `.gitignore` para no exponer credenciales en GitHub. En el repositorio solo viajan las plantillas seguras `config.example.py` y `.env.example`.
 
 ## Dependencias
 

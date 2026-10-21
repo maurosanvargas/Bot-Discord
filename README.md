@@ -31,11 +31,16 @@ Bot de Discord para reproducir voces de Fish Audio, combinando texto, voces y so
    ```bash
    python -m pip install -r requirements.txt
    ```
-4. Crea tu archivo local de configuración a partir de `config.example.py`:
-   ```bash
-   copy config.example.py config.py
-   ```
-5. Define las credenciales en `config.py` o mediante variables de entorno:
+4. Configura tus credenciales (puedes usar `config.py` o un archivo `.env`):
+   - **Opción A (local con config.py):**
+     ```bash
+     copy config.example.py config.py
+     ```
+   - **Opción B (producción / VM con .env):**
+     ```bash
+     cp .env.example .env
+     ```
+5. Define las credenciales en tu `config.py` o `.env`:
    - `DISCORD_TOKEN`
    - `FISH_AUDIO_API_KEY`
    - `GEMINI_API_KEY`
